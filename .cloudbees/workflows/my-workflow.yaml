@@ -1,0 +1,46 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: My workflow
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        type: string
+        required: true
+        description: This is a system-generated parameter and is required for use in application releases. Refer to https://docs.cloudbees.com/docs/cloudbees-platform/latest/applications/releases#manifest for the expected format
+metadata:
+  stages/v1alpha1:
+    - name: Release Readiness
+      jobs:
+        - checkout-and-scan
+jobs:
+  checkout-and-scan:
+    steps:
+      - with:
+          provider: github
+          repository: https://github.com/Dev-Org-Hari/webrtc-go
+          ref: main
+          path: webrtc-repo
+        uses: cloudbees-io/checkout@v1
+        name: Checkout Component 1
+      - with:
+          snyk-token: b805f82c-36ef-4f7d-aee5-16bfaa718f75
+          org-id: cloudbees-compliance-partner-development
+        uses: cloudbees-io/snyk-sast-plugin@v1
+        name: Run Snyk Sast Scan
+      - uses: cloudbees-io/checkout@v1
+        name: Chekout Component 2
+      - with:
+          snyk-token: b805f82c-36ef-4f7d-aee5-16bfaa718f75
+          org-id: cloudbees-compliance-partner-development
+        uses: cloudbees-io/snyk-sast-plugin@v1
+        name: Run Snyk Sast Scan
+      - run: |-
+          echo "Critical: ${{ steps.gosec-step.outputs.critical-count }}"
+                    echo "Very high: ${{ steps.gosec-step.outputs.very-high-count }}"
+                    echo "High: ${{ steps.gosec-step.outputs.high-count }}"
+                    echo "Medium: ${{ steps.gosec-step.outputs.medium-count }}"
+                    echo "Low: ${{ steps.gosec-step.outputs.low-count }}"
+                    echo "Policy Subject: ${{ steps.gosec-step.outputs.policy-subject }}"
+        uses: docker://alpine:latest
+        name: Print Output
