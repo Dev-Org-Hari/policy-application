@@ -15,6 +15,8 @@ metadata:
         - checkout-and-scan
 jobs:
   checkout-and-scan:
+    outputs:
+      policy-subject: ${{ steps.step-4.outputs.policy-subject }}
     steps:
       - with:
           provider: github
@@ -26,21 +28,16 @@ jobs:
       - with:
           snyk-token: b805f82c-36ef-4f7d-aee5-16bfaa718f75
           org-id: cloudbees-compliance-partner-development
+          workspace-dir: webrtc-repo
         uses: cloudbees-io/snyk-sast-plugin@v1
         name: Run Snyk Sast Scan
-      - uses: cloudbees-io/checkout@v1
+      - with:
+          path: gosec-count
+        uses: cloudbees-io/checkout@v1
         name: Chekout Component 2
       - with:
           snyk-token: b805f82c-36ef-4f7d-aee5-16bfaa718f75
           org-id: cloudbees-compliance-partner-development
+          workspace-dir: gosec-count
         uses: cloudbees-io/snyk-sast-plugin@v1
         name: Run Snyk Sast Scan
-      - run: |-
-          echo "Critical: ${{ steps.gosec-step.outputs.critical-count }}"
-                    echo "Very high: ${{ steps.gosec-step.outputs.very-high-count }}"
-                    echo "High: ${{ steps.gosec-step.outputs.high-count }}"
-                    echo "Medium: ${{ steps.gosec-step.outputs.medium-count }}"
-                    echo "Low: ${{ steps.gosec-step.outputs.low-count }}"
-                    echo "Policy Subject: ${{ steps.gosec-step.outputs.policy-subject }}"
-        uses: docker://alpine:latest
-        name: Print Output
