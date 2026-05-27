@@ -40,7 +40,8 @@ jobs:
   create-release-ticket:
     steps:
       - run: echo "Creating release ticket"
-        uses: docker://alpine:latest
+        uses: docker://golang:1.26.3
+        shell: sh
   gather-evidence:
     steps:
       - uses: docker://alpine:3.20
