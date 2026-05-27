@@ -1,10 +1,8 @@
 apiVersion: automation.cloudbees.io/v1alpha1
 kind: workflow
 name: staged-release
-
 on:
   workflow_dispatch:
-
 metadata:
   stages/v1alpha1:
     - name: Release Readiness
@@ -38,35 +36,27 @@ metadata:
         - prod-smoke-tests
         - gradual-feature-rollout
         - policy-check-production
-
 jobs:
-  # --- Stage: Release Readiness ---
-
   create-release-ticket:
     steps:
-      - uses: docker://alpine:3.20
-        run: echo "Creating release ticket"
-
+      - run: echo "Creating release ticket"
+        uses: docker://alpine:latest
   gather-evidence:
     steps:
       - uses: docker://alpine:3.20
         run: echo "Gathering release evidence"
-
   quality-gate-check:
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running quality gate check"
-
   update-jira-status:
     steps:
       - uses: docker://alpine:3.20
         run: echo "Updating JIRA status"
-
   trivy-security-scan:
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running Trivy security scan"
-
   approval:
     needs:
       - create-release-ticket
@@ -81,39 +71,36 @@ jobs:
       disallowLaunchByUser: false
       approvers: release-managers
       notifyAllEligibleUsers: false
-
   policy-check-release-readiness:
-    needs: [approval]
+    needs:
+      - approval
     steps:
       - uses: docker://alpine:3.20
         run: echo "Evaluating policies - Security Scan Results (BLOCK), Critical CVE (PAUSE & NOTIFY), SBOM Generation (BLOCK)"
-
-  # --- Stage: Quality Assurance ---
-
   helm-deploy:
-    needs: [policy-check-release-readiness]
+    needs:
+      - policy-check-release-readiness
     steps:
       - uses: docker://alpine:3.20
         run: echo "Deploying via Helm to QA environment"
-
   unify-fm:
-    needs: [policy-check-release-readiness]
+    needs:
+      - policy-check-release-readiness
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running Unify FM checks"
-
   playwright-e2e-tests:
-    needs: [policy-check-release-readiness]
+    needs:
+      - policy-check-release-readiness
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running Playwright E2E tests"
-
   performance-tests:
-    needs: [policy-check-release-readiness]
+    needs:
+      - policy-check-release-readiness
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running performance tests"
-
   policy-check-qa:
     needs:
       - helm-deploy
@@ -123,27 +110,24 @@ jobs:
     steps:
       - uses: docker://alpine:3.20
         run: echo "Evaluating policies - High CVE Notification (NOTIFY)"
-
-  # --- Stage: Staging ---
-
   create-release:
-    needs: [policy-check-qa]
+    needs:
+      - policy-check-qa
     steps:
       - uses: docker://alpine:3.20
         run: echo "Creating release for staging"
-
   argocd-deploy:
-    needs: [create-release]
+    needs:
+      - create-release
     steps:
       - uses: docker://alpine:3.20
         run: echo "Deploying to staging via ArgoCD"
-
   enable-beta-features:
-    needs: [create-release]
+    needs:
+      - create-release
     steps:
       - uses: docker://alpine:3.20
         run: echo "Enabling beta features in staging"
-
   smoke-tests:
     needs:
       - argocd-deploy
@@ -151,7 +135,6 @@ jobs:
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running smoke tests on staging"
-
   rollback-check:
     needs:
       - argocd-deploy
@@ -159,7 +142,6 @@ jobs:
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running rollback check on staging"
-
   policy-check-staging:
     needs:
       - smoke-tests
@@ -167,33 +149,30 @@ jobs:
     steps:
       - uses: docker://alpine:3.20
         run: echo "Evaluating policies - Production Readiness (PAUSE & NOTIFY)"
-
-  # --- Stage: Production ---
-
   servicenow-approval:
-    needs: [policy-check-staging]
+    needs:
+      - policy-check-staging
     steps:
       - uses: docker://alpine:3.20
         run: echo "ServiceNow approval submitted"
-
   blue-green-deploy:
-    needs: [servicenow-approval]
+    needs:
+      - servicenow-approval
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running blue-green deployment to production"
-
   prod-smoke-tests:
-    needs: [blue-green-deploy]
+    needs:
+      - blue-green-deploy
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running production smoke tests"
-
   gradual-feature-rollout:
-    needs: [blue-green-deploy]
+    needs:
+      - blue-green-deploy
     steps:
       - uses: docker://alpine:3.20
         run: echo "Gradual feature rollout in production"
-
   policy-check-production:
     needs:
       - prod-smoke-tests
