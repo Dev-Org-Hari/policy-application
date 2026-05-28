@@ -57,7 +57,7 @@ jobs:
         run: echo "Updating JIRA status"
   checkout-and-sast-scan:
     outputs:
-      policy-subject: ${{ steps.step3.outputs.policy-subject }}
+      policy-subject: ${{ steps.snyk-sast-scan.outputs.policy-subject }}
     steps:
       - with:
           provider: github
@@ -85,11 +85,13 @@ jobs:
           workspace-dir: gosec-count
         uses: cloudbees-io/snyk-sast-plugin@v1
         name: Run Snyk Sast Scan
+        id: snyk-sast-scan
   trivy-security-scan:
     needs: checkout-and-sast-scan
     steps:
       - uses: docker://alpine:3.20
-        run: echo "Policy Subject: ${{ needs.checkout-and-sast-scan.outputs.policy-subject }}"
+        run: |
+          echo "Policy Subject: ${{ needs.checkout-and-sast-scan.outputs.policy-subject }}"
   approval:
     needs:
       - create-release-ticket
