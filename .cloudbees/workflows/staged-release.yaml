@@ -92,7 +92,7 @@ jobs:
       - with:
           policy-id: 33f56ece-598b-4bf5-ba48-f050e9da7914
           input-data: ${{ needs.checkout-and-sast-scan.outputs.policy-subject }}
-        uses: cloudbees-io/policy-utils/evaluate-policy/workflow.yml@v0.1
+        uses: cloudbees-io/policy-utils/evaluate-policy@v0.1
         name: policy-evaluation
   trivy-security-scan:
     steps:
