@@ -97,12 +97,6 @@ jobs:
       policy-id: 33f56ece-598b-4bf5-ba48-f050e9da7914
       input-data: ${{ needs.checkout-and-sast-scan.outputs.policy-subject }}
     secrets: inherit
-  trivy-security-scan:
-    steps:
-      - uses: docker://alpine:3.20
-        run: |
-          echo "Trivy scan completed"
-    needs: policy-check-release-readiness
   approval:
     needs:
       - create-release-ticket
@@ -148,20 +142,17 @@ jobs:
       - uses: docker://alpine:3.20
         run: echo "Evaluating policies - High CVE Notification (NOTIFY)"
   create-release:
-    needs:
-      - policy-check-qa
+    needs: policy-check-qa
     steps:
       - uses: docker://alpine:3.20
         run: echo "Creating release for staging"
   argocd-deploy:
-    needs:
-      - create-release
+    needs: create-release
     steps:
       - uses: docker://alpine:3.20
         run: echo "Deploying to staging via ArgoCD"
   enable-beta-features:
-    needs:
-      - create-release
+    needs: create-release
     steps:
       - uses: docker://alpine:3.20
         run: echo "Enabling beta features in staging"
@@ -187,26 +178,22 @@ jobs:
       - uses: docker://alpine:3.20
         run: echo "Evaluating policies - Production Readiness (PAUSE & NOTIFY)"
   servicenow-approval:
-    needs:
-      - policy-check-staging
+    needs: policy-check-staging
     steps:
       - uses: docker://alpine:3.20
         run: echo "ServiceNow approval submitted"
   blue-green-deploy:
-    needs:
-      - servicenow-approval
+    needs: servicenow-approval
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running blue-green deployment to production"
   prod-smoke-tests:
-    needs:
-      - blue-green-deploy
+    needs: blue-green-deploy
     steps:
       - uses: docker://alpine:3.20
         run: echo "Running production smoke tests"
   gradual-feature-rollout:
-    needs:
-      - blue-green-deploy
+    needs: blue-green-deploy
     steps:
       - uses: docker://alpine:3.20
         run: echo "Gradual feature rollout in production"
@@ -217,3 +204,18 @@ jobs:
     steps:
       - uses: docker://alpine:3.20
         run: echo "Evaluating policies - Production deployment complete"
+  trivy-security-scan:
+    needs: policy-check-release-readiness
+    steps:
+      - with:
+          url: ${{ vars.JFROG_URL }}
+          username: ${{ vars.JFROG_ACTIONS_USERNAME }}
+          password: ${{ secrets.JFROG_ACTIONS_PASSWORD }}
+          file-path: /cloudbees/workspace/golang-alpine.tar
+          artifactory-path: test-generic-repo/jfrogtest/golang-alpine.tar
+        uses: cloudbees-io/jfrog-artifactory-download-file@v1
+        name: jfrog-actions-workflow-download
+      - with:
+          binary-tar-path: /cloudbees/workspace/golang-alpine.tar
+        uses: cloudbees-io/trivy-plugin@CBP-45234
+        name: trivy-scan
