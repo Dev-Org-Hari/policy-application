@@ -131,7 +131,9 @@ jobs:
       - quality-gate-check
       - update-jira-status
       - checkout-and-sast-scan
+      - policy-check-release-readiness
       - trivy-security-scan
+      - policy-check-container-release-readiness
     timeout-minutes: 4320
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
     with:
