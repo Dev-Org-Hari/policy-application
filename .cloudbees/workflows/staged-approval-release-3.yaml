@@ -99,7 +99,9 @@ jobs:
           artifactory-path: test-generic-repo/jfrogtest/golang-alpine.tar
         uses: cloudbees-io/jfrog-artifactory-download-file@v1
         name: jfrog-actions-workflow-download
-      - uses: cloudbees-io/trivy-plugin@CBP-48900
+      - with:
+          binary-tar-path: /cloudbees/workspace/golang-alpine.tar
+        uses: cloudbees-io/trivy-plugin@CBP-48900
         name: trivy-scan
         id: trivy-scan
       - name: Print Trivy Policy Subject
