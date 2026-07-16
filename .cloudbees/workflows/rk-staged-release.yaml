@@ -94,7 +94,7 @@ jobs:
           echo "Policy Subject: ${{ steps.snyk-sast-scan.outputs.policy-subject }}"
   policy-check-release-readiness:
     needs: checkout-and-sast-scan
-    uses: cloudbees-io/policy-utils/.cloudbees/workflows/action.yaml@main
+    uses: cloudbees-io/policy-utils/evaluate-policy/workflow.yml@main
     with:
       policy-id: 1994fb18-dc93-4426-9916-1566b4ce8708
       input-data: ${{ needs.checkout-and-sast-scan.outputs.policy-subject }}
@@ -123,7 +123,7 @@ jobs:
           echo "Policy Subject: ${{ steps.trivy-scan.outputs.policy-subject }}"
   policy-check-container-release-readiness:
     needs: trivy-security-scan
-    uses: cloudbees-io/policy-utils/.cloudbees/workflows/action.yaml@main
+    uses: cloudbees-io/policy-utils/evaluate-policy/workflow.yml@main
     with:
       policy-id: 1994fb18-dc93-4426-9916-1566b4ce8708
       input-data: ${{ needs.trivy-security-scan.outputs.policy-subject }}
